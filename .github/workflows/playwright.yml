@@ -1,0 +1,48 @@
+name: Playwright tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      repeat_each:
+        description: Run every test this many times (to measure flakiness)
+        default: '1'
+        required: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run tests
+        env:
+          REPEAT_EACH: ${{ inputs.repeat_each || '1' }}
+        run: |
+          if ! [[ "$REPEAT_EACH" =~ ^[1-9][0-9]?$ ]]; then
+            echo "repeat_each must be a number from 1 to 99" && exit 1
+          fi
+          npx playwright test --repeat-each="$REPEAT_EACH"
+
+      - uses: actions/upload-artifact@v5
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/results.json
+          retention-days: 14
