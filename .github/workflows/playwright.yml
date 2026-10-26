@@ -13,7 +13,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Pinned so flakiness measurements are not affected by a runner OS change mid-experiment.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
