@@ -49,9 +49,9 @@ Reviewed against the code and the available documentation: the [Restful Booker A
 | ai-checkout › lastName missing        | Yes (1 user)             | ⚠️ Oracle            |
 | ai-checkout › postalCode missing      | Yes (1 user)             | ⚠️ Oracle            |
 | ai-logout › log out                   | Not measured             | ⚠️ Oracle            |
-| ai-booking › PUT                      | n/a (API)                | _pending_            |
-| ai-booking › PATCH                    | n/a (API)                | _pending_            |
-| ai-booking › filter by first name     | n/a (API)                | _pending_            |
+| ai-booking › PUT                      | n/a (API)                | ✅                   |
+| ai-booking › PATCH                    | n/a (API)                | ✅                   |
+| ai-booking › filter by first name     | n/a (API)                | ✅                   |
 | ai-booking › invalid payload rejected | No                       | ❌ Weak + Oracle     |
 | ai-auth › no token on wrong creds     | n/a (API)                | ⚠️ Oracle            |
 | ai-auth › getToken fails on wrong creds | No                     | ⚠️ Weak              |
@@ -67,6 +67,7 @@ Reviewed against the code and the available documentation: the [Restful Booker A
 - **ai-checkout › happy path:** assumes the cart is empty after checkout. Reasonable (every shop does this) and true today, but undocumented.
 - **ai-checkout › missing fields:** the error texts are undocumented; if the app changes its wording, these tests fail. Generated as three independent tests from one loop. The reviewer would write them as three explicit tests for readability.
 - **ai-logout:** the full message is "Epic sadface: You can only access '/inventory.html' when you are logged in.", but the test only checks the last part. The end of the session is checked by behavior (the products page redirects to login), not by inspecting cookies.
+- **ai-booking › PUT, PATCH, filter:** behavior backed by the docs. The response status is checked in the client (`jsonOrThrow`), which fails with the URL, status and body, so a failed request gives a descriptive error before any assertion runs. The reviewer first flagged a missing status check; reading the client resolved it.
 - **ai-booking › invalid payload:** the docs do not say which status to expect. The API returns 500 (a server error) for a validation problem, which should be 400. The AI noticed, wrote a comment, and loosened the assertion to "any status ≥ 400". If the service were down (e.g. 503), this test would still pass.
 - **ai-auth › no token:** the docs do not describe this case. The API returns 200 with `{"reason":"Bad credentials"}`; the test treats that as correct.
 - **ai-auth › getToken fails:** `rejects.toThrow()` accepts any error, including a network failure. When it passes today, it is because the response does not match the token schema, not because the API rejected the login.
