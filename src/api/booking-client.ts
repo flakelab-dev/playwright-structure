@@ -1,5 +1,6 @@
 import { APIRequestContext, APIResponse } from '@playwright/test';
 import {
+  authFailureSchema,
   authResponseSchema,
   Booking,
   bookingIdsSchema,
@@ -25,9 +26,12 @@ export class BookingClient {
   constructor(private readonly request: APIRequestContext) {}
 
   async getToken(username: string, password: string): Promise<string> {
-    const response = await this.getTokenRaw(username, password);
-    const body = authResponseSchema.parse(await jsonOrThrow(response));
-    return body.token;
+    const body = await jsonOrThrow(await this.getTokenRaw(username, password));
+    const failure = authFailureSchema.safeParse(body);
+    if (failure.success) {
+      throw new Error(`Authentication failed: ${failure.data.reason}`);
+    }
+    return authResponseSchema.parse(body).token;
   }
 
   getTokenRaw(username: string, password: string): Promise<APIResponse> {
