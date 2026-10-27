@@ -129,4 +129,14 @@ Not changed: the duplicated header locators and the repeated checkout setup (Q4)
 
 ## Where the AI went wrong
 
-_To be written with the article._
+Written up in full in the article: [360 green runs, and one test that would pass with the server down](https://flakelab.dev/blog/ai-generated-playwright-tests-measured/).
+
+1. **It loosened an assertion to fit a bug.** It knew the API returns 500 for a validation error and accepted any status ≥ 400, so the test would pass with the service down. Fixed in bed0c5d.
+2. **It accepted any error.** `rejects.toThrow()` with no message passed because of a schema error on the 200 + `reason` response, not because the API rejected the login. Fixed in c272114.
+3. **It copied a gap from the baseline.** Bookings were created and never deleted, like in the hand-written tests. Fixed in 5b5ce0b.
+4. **It turned current behavior into expected behavior.** SauceDemo has no spec, so every UI expectation is today's behavior: 8 of 13 tests are ⚠️ Oracle. Its list of assumptions is where these problems show up.
+5. **Minor:** duplicated header locators and repeated checkout setup. Not fixed.
+
+What it got right: it followed the structure and naming conventions, used unique data in the filter test, guarded the sorting test against an already sorted list, parametrized the missing-field cases and declared its assumptions.
+
+Its mistakes were about what to check, not how to write the code.
