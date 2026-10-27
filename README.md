@@ -77,7 +77,7 @@ Each folder in `experiments/` records one experiment with AI-generated tests:
 
 The generated code is first committed exactly as produced, before it is run or reviewed, so the history shows what the AI wrote on its own.
 
-- [01: AI-generated tests on an existing structure](experiments/01-ai-generated-tests/review.md)
+- [01: AI-generated tests on an existing structure](experiments/01-ai-generated-tests/review.md). Article: [360 green runs, and one test that would pass with the server down](https://flakelab.dev/blog/ai-generated-playwright-tests-measured/)
 
 ## Design choices
 
