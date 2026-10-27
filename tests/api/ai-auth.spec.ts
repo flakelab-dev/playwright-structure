@@ -13,6 +13,8 @@ test.describe('Auth API', () => {
   });
 
   test('getToken fails loudly on wrong credentials', async ({ bookingClient }) => {
-    await expect(bookingClient.getToken(apiAdmin.username, 'wrong-password')).rejects.toThrow();
+    await expect(bookingClient.getToken(apiAdmin.username, 'wrong-password')).rejects.toThrow(
+      'Authentication failed: Bad credentials',
+    );
   });
 });

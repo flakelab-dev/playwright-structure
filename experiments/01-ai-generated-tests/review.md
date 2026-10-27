@@ -113,6 +113,20 @@ All four are true today. None is documented.
 - [x] SauceDemo exposes the `data-test` attributes it used (the tests that use them pass).
 - [x] The cart is empty after completing checkout (asserted by the happy path test, which passes).
 
+## Fixes after review
+
+Each fix is a separate commit on top of the AI's output, so the before and after can be compared.
+
+| Finding                                    | Fix                                                                                              | Commit  |
+| :----------------------------------------- | :----------------------------------------------------------------------------------------------- | :------ |
+| ❌ Invalid payload accepts any status ≥ 400 | Asserts the exact 500 and records it as a known API bug (should be 400)                          | bed0c5d |
+| ⚠️ Weak: getToken accepts any error        | The client throws `Authentication failed: <reason>`; the test asserts that message              | c272114 |
+| Bookings never deleted                     | The `bookingClient` fixture deletes every booking a test created; verified with a GET after run | 5b5ce0b |
+
+`test.fail()` was considered for the known bug and rejected: it treats any failure as expected, including an outage.
+
+Not changed: the duplicated header locators and the repeated checkout setup (Q4). They are improvements, not defects, and are left for a later refactor.
+
 ## Where the AI went wrong
 
-_To be written after the review._
+_To be written with the article._

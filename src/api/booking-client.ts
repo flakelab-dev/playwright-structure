@@ -1,5 +1,6 @@
 import { APIRequestContext, APIResponse } from '@playwright/test';
 import {
+  authFailureSchema,
   authResponseSchema,
   Booking,
   bookingIdsSchema,
@@ -22,12 +23,21 @@ export interface BookingFilter {
  * Methods ending in "Raw" return the response untouched, for tests about status codes.
  */
 export class BookingClient {
+  private readonly createdIds = new Set<number>();
+
   constructor(private readonly request: APIRequestContext) {}
 
+  get hasCreatedBookings(): boolean {
+    return this.createdIds.size > 0;
+  }
+
   async getToken(username: string, password: string): Promise<string> {
-    const response = await this.getTokenRaw(username, password);
-    const body = authResponseSchema.parse(await jsonOrThrow(response));
-    return body.token;
+    const body = await jsonOrThrow(await this.getTokenRaw(username, password));
+    const failure = authFailureSchema.safeParse(body);
+    if (failure.success) {
+      throw new Error(`Authentication failed: ${failure.data.reason}`);
+    }
+    return authResponseSchema.parse(body).token;
   }
 
   getTokenRaw(username: string, password: string): Promise<APIResponse> {
@@ -37,6 +47,7 @@ export class BookingClient {
   async createBooking(booking: Booking): Promise<{ id: number; booking: Booking }> {
     const response = await this.createBookingRaw(booking);
     const body = createBookingResponseSchema.parse(await jsonOrThrow(response));
+    this.createdIds.add(body.bookingid);
     return { id: body.bookingid, booking: body.booking };
   }
 
@@ -85,8 +96,20 @@ export class BookingClient {
     return bookingSchema.parse(await jsonOrThrow(response));
   }
 
-  deleteBookingRaw(id: number, token: string): Promise<APIResponse> {
-    return this.request.delete(`/booking/${id}`, { headers: authHeaders(token) });
+  async deleteBookingRaw(id: number, token: string): Promise<APIResponse> {
+    const response = await this.request.delete(`/booking/${id}`, { headers: authHeaders(token) });
+    if (response.ok()) this.createdIds.delete(id);
+    return response;
+  }
+
+  /** 405 means the booking is already gone (Restful Booker resets periodically). */
+  async deleteCreatedBookings(token: string): Promise<void> {
+    for (const id of [...this.createdIds]) {
+      const response = await this.deleteBookingRaw(id, token);
+      if (!response.ok() && response.status() !== 405) {
+        throw new Error(`Cleanup of booking ${id} failed with ${response.status()}`);
+      }
+    }
   }
 }
 

@@ -46,7 +46,13 @@ export const test = base.extend<Fixtures>({
   },
 
   bookingClient: async ({ request }, use) => {
-    await use(new BookingClient(request));
+    const client = new BookingClient(request);
+    await use(client);
+    if (client.hasCreatedBookings) {
+      await client.deleteCreatedBookings(
+        await client.getToken(apiAdmin.username, apiAdmin.password),
+      );
+    }
   },
 
   authToken: async ({ bookingClient }, use) => {
