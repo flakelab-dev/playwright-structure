@@ -9,22 +9,22 @@
 
 **Runs: 360 · Passed: 360 (100%)**
 
-| Project | Test | Passed | Pass rate |
-| :-- | :-- | --: | --: |
-| api | ai-auth › getToken fails loudly on wrong credentials | 20/20 | 100% |
-| api | ai-auth › wrong credentials do not return a token | 20/20 | 100% |
-| api | ai-booking › filtering by first name returns the matching booking | 20/20 | 100% |
-| api | ai-booking › PATCH changes only the given fields | 20/20 | 100% |
-| api | ai-booking › PUT replaces every field of a booking | 20/20 | 100% |
-| api | ai-booking › creating a booking without required fields is rejected | 20/20 | 100% |
-| ui | ai-cart › removing a product leaves only the other products in the cart | 20/20 | 100% |
-| ui | ai-checkout › error when firstName is missing | 20/20 | 100% |
-| ui | ai-checkout › error when lastName is missing | 20/20 | 100% |
-| ui | ai-checkout › error when postalCode is missing | 20/20 | 100% |
-| ui | ai-checkout › completing checkout shows the order confirmation | 20/20 | 100% |
-| ui | ai-logout › logging out returns to the login page and ends the session | 20/20 | 100% |
-| ui | ai-sorting › sorting by price low to high orders products by ascending price | 20/20 | 100% |
-| | *Baseline (hand-written): 5 tests* | 100/100 | 100% |
+| Project | Test                                                                         |  Passed | Pass rate |
+| :------ | :--------------------------------------------------------------------------- | ------: | --------: |
+| api     | ai-auth › getToken fails loudly on wrong credentials                         |   20/20 |      100% |
+| api     | ai-auth › wrong credentials do not return a token                            |   20/20 |      100% |
+| api     | ai-booking › filtering by first name returns the matching booking            |   20/20 |      100% |
+| api     | ai-booking › PATCH changes only the given fields                             |   20/20 |      100% |
+| api     | ai-booking › PUT replaces every field of a booking                           |   20/20 |      100% |
+| api     | ai-booking › creating a booking without required fields is rejected          |   20/20 |      100% |
+| ui      | ai-cart › removing a product leaves only the other products in the cart      |   20/20 |      100% |
+| ui      | ai-checkout › error when firstName is missing                                |   20/20 |      100% |
+| ui      | ai-checkout › error when lastName is missing                                 |   20/20 |      100% |
+| ui      | ai-checkout › error when postalCode is missing                               |   20/20 |      100% |
+| ui      | ai-checkout › completing checkout shows the order confirmation               |   20/20 |      100% |
+| ui      | ai-logout › logging out returns to the login page and ends the session       |   20/20 |      100% |
+| ui      | ai-sorting › sorting by price low to high orders products by ascending price |   20/20 |      100% |
+|         | _Baseline (hand-written): 5 tests_                                           | 100/100 |      100% |
 
 ## Review
 
@@ -36,42 +36,81 @@ For each AI-generated test, answer:
 3. **Isolation:** does it depend on anything it does not control (shared public data, other tests, leftover state, data it never cleans up)?
 4. **Structure:** does it use the fixtures, page objects and client, or bypass them? Are the selectors robust?
 
-Verdict: ✅ good as is · ⚠️ passes but weak or fragile · ❌ wrong
+Verdict: ✅ good as is · ⚠️ Oracle: expected behavior not backed by a specification · ⚠️ Weak: the assertion would not catch the failure · ❌ wrong
 
-| Test | 1. Oracle | 2. Sensitivity | 3. Isolation | 4. Structure | Verdict | Notes |
-| :-- | :-- | :-- | :-- | :-- | :-: | :-- |
-| ai-sorting › price low to high | | | | | | |
-| ai-cart › remove a product | | | | | | |
-| ai-checkout › happy path | | | | | | |
-| ai-checkout › firstName missing | | | | | | |
-| ai-checkout › lastName missing | | | | | | |
-| ai-checkout › postalCode missing | | | | | | |
-| ai-logout › log out | | | | | | |
-| ai-booking › PUT | | | | | | |
-| ai-booking › PATCH | | | | | | |
-| ai-booking › filter by first name | | | | | | |
-| ai-booking › invalid payload rejected | | | | | | |
-| ai-auth › no token on wrong credentials | | | | | | |
-| ai-auth › getToken fails on wrong credentials | | | | | | |
+Reviewed against the code and the available documentation: the [Restful Booker API docs](https://restful-booker.herokuapp.com/apidoc/index.html). SauceDemo has no documentation, so every UI expectation comes from the app's current behavior.
+
+| Test                                  | Q2: caught a seeded bug? | Verdict              |
+| :------------------------------------ | :----------------------- | :------------------- |
+| ai-sorting › price low to high        | Yes (3 users)            | ⚠️ Oracle            |
+| ai-cart › remove a product            | Not measured             | ⚠️ Oracle            |
+| ai-checkout › happy path              | Yes (2 users)            | ⚠️ Oracle            |
+| ai-checkout › firstName missing       | Yes (1 user)             | ⚠️ Oracle            |
+| ai-checkout › lastName missing        | Yes (1 user)             | ⚠️ Oracle            |
+| ai-checkout › postalCode missing      | Yes (1 user)             | ⚠️ Oracle            |
+| ai-logout › log out                   | Not measured             | ⚠️ Oracle            |
+| ai-booking › PUT                      | n/a (API)                | _pending_            |
+| ai-booking › PATCH                    | n/a (API)                | _pending_            |
+| ai-booking › filter by first name     | n/a (API)                | _pending_            |
+| ai-booking › invalid payload rejected | No                       | ❌ Weak + Oracle     |
+| ai-auth › no token on wrong creds     | n/a (API)                | ⚠️ Oracle            |
+| ai-auth › getToken fails on wrong creds | No                     | ⚠️ Weak              |
+
+**Isolation (Q3), all tests:** no dependency between tests; they pass in any order and in parallel (360 runs, 6 workers). The UI tests share `standard_user`, but SauceDemo keeps the cart in the browser, and each test gets a fresh browser context. The filter test uses a unique first name, so other bookings on the shared public instance cannot match. However, the PUT, PATCH and filter tests create bookings and never delete them: about 60 abandoned bookings per 20-run session on a shared public service. The hand-written baseline has the same gap, and the AI copied the pattern.
+
+**Structure (Q4), all tests:** uses the fixtures, page objects and API client; follows the `Raw` naming convention; adds a data builder like the existing one; parametrizes the three missing-field cases instead of copying them. `data-test` selectors are the most stable choice on SauceDemo. Room to improve: `title`, `itemNames` and `cartBadge` are duplicated across three page objects (a shared header component would scale better), and the four checkout tests repeat the same setup (a fixture would remove it).
+
+**Notes per test**
+
+- **ai-sorting:** reads the prices, sorts them in code, checks the page does not start sorted (a good guard), then sorts on the page and compares. Solid logic, but nothing documents the expected behavior.
+- **ai-cart:** a good test, but nothing documents the expected behavior.
+- **ai-checkout › happy path:** assumes the cart is empty after checkout. Reasonable (every shop does this) and true today, but undocumented.
+- **ai-checkout › missing fields:** the error texts are undocumented; if the app changes its wording, these tests fail. Generated as three independent tests from one loop. The reviewer would write them as three explicit tests for readability.
+- **ai-logout:** the full message is "Epic sadface: You can only access '/inventory.html' when you are logged in.", but the test only checks the last part. The end of the session is checked by behavior (the products page redirects to login), not by inspecting cookies.
+- **ai-booking › invalid payload:** the docs do not say which status to expect. The API returns 500 (a server error) for a validation problem, which should be 400. The AI noticed, wrote a comment, and loosened the assertion to "any status ≥ 400". If the service were down (e.g. 503), this test would still pass.
+- **ai-auth › no token:** the docs do not describe this case. The API returns 200 with `{"reason":"Bad credentials"}`; the test treats that as correct.
+- **ai-auth › getToken fails:** `rejects.toThrow()` accepts any error, including a network failure. When it passes today, it is because the response does not match the token schema, not because the API rejected the login.
+
+## Run 2: seeded bugs (mutation check)
+
+SauceDemo offers demo users with deliberate bugs. The `loggedInPage` fixture reads `UI_USER`, so the same AI-generated UI tests ran as each user, 3 times each:
+
+```sh
+UI_USER=problem_user npx playwright test tests/ui/ai- --project=ui --repeat-each=3
+```
+
+| User                    | Passed | What failed, and why                                                                                                                         |
+| :---------------------- | -----: | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| standard_user           |  21/21 | (control)                                                                                                                                    |
+| problem_user            |   9/21 | Sorting does not sort. The last name field ignores input, so checkout cannot continue and the other missing-field tests get the wrong error. |
+| error_user              |  12/21 | Sorting does not sort. Checkout cannot finish. A missing last name is not reported.                                                          |
+| visual_user             |  18/21 | Sorting: the prices shown after sorting are not the prices shown before.                                                                     |
+| performance_glitch_user |  17/21 | Not a functional bug: login takes over 5 s, and the tests that start with an assertion on the page title time out.                            |
+
+Every failure above was caused by the seeded bug, not by a mistake in the test. Tests that stayed green did so because the bug was not on their path (for example, logout works for every user). Not verified manually: whether `error_user` has a cart bug on products other than the two the test uses.
+
+The `performance_glitch_user` run shows a flakiness source: the same slowness fails the tests whose first step is an assertion (5 s timeout) and passes the tests whose first step is an action (no action timeout).
 
 ### Support code added by the AI
 
-| File | What changed | Notes |
-| :-- | :-- | :-- |
-| src/pages/inventory-page.ts | Sorting, cart link, menu and logout | |
-| src/pages/cart-page.ts | New page object | |
-| src/pages/checkout-page.ts | New page object (3 checkout steps) | |
-| src/api/booking-client.ts | PUT, PATCH, filter, raw variants, auth headers helper | |
-| src/api/schemas.ts | Booking IDs and auth failure schemas | |
-| src/fixtures/index.ts | cartPage and checkoutPage fixtures | |
-| src/data/customers.ts | Checkout form data builder | |
+| File                        | What changed                                          | Notes |
+| :-------------------------- | :---------------------------------------------------- | :---- |
+| src/pages/inventory-page.ts | Sorting, cart link, menu and logout                   |       |
+| src/pages/cart-page.ts      | New page object                                       |       |
+| src/pages/checkout-page.ts  | New page object (3 checkout steps)                    |       |
+| src/api/booking-client.ts   | PUT, PATCH, filter, raw variants, auth headers helper |       |
+| src/api/schemas.ts          | Booking IDs and auth failure schemas                  |       |
+| src/fixtures/index.ts       | cartPage and checkoutPage fixtures                    |       |
+| src/data/customers.ts       | Checkout form data builder                            |       |
 
 ### Assumptions the AI declared (from its own report)
 
-- [ ] Restful Booker returns 500 for an incomplete booking payload.
-- [ ] Restful Booker returns 200 with `{"reason":"Bad credentials"}` for wrong credentials.
-- [ ] SauceDemo exposes the `data-test` attributes it used (`logout-sidebar-link`, `product-sort-container`, `complete-header`, `shopping-cart-link`, `inventory-item` in cart rows).
-- [ ] The cart is empty after completing checkout.
+All four are true today. None is documented.
+
+- [x] Restful Booker returns 500 for an incomplete booking payload (checked with curl; the test itself only checks ≥ 400).
+- [x] Restful Booker returns 200 with `{"reason":"Bad credentials"}` for wrong credentials (checked with curl).
+- [x] SauceDemo exposes the `data-test` attributes it used (the tests that use them pass).
+- [x] The cart is empty after completing checkout (asserted by the happy path test, which passes).
 
 ## Where the AI went wrong
 

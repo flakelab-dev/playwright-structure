@@ -8,6 +8,15 @@ export const uiUsers = {
   lockedOut: { username: 'locked_out_user', password: 'secret_sauce' },
 } as const;
 
+/**
+ * User behind the loggedInPage fixture. Set UI_USER to run the suite as another
+ * SauceDemo user, e.g. UI_USER=problem_user to check which tests catch its bugs.
+ */
+export const sessionUser = {
+  username: process.env.UI_USER ?? uiUsers.standard.username,
+  password: uiUsers.standard.password,
+};
+
 export const apiAdmin = {
   username: process.env.API_USERNAME ?? 'admin',
   password: process.env.API_PASSWORD ?? 'password123',
