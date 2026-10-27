@@ -18,8 +18,16 @@ export const createBookingResponseSchema = z.object({
   booking: bookingSchema,
 });
 
+/** GET /booking returns only ids, optionally filtered by query parameters. */
+export const bookingIdsSchema = z.array(z.object({ bookingid: z.number().int().positive() }));
+
 export const authResponseSchema = z.object({
   token: z.string().min(1),
+});
+
+/** Restful Booker answers wrong credentials with 200 and this body, not with 401. */
+export const authFailureSchema = z.object({
+  reason: z.string(),
 });
 
 export type Booking = z.infer<typeof bookingSchema>;

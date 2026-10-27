@@ -1,6 +1,8 @@
 import { test as base } from '@playwright/test';
 import { BookingClient } from '../api/booking-client';
-import { apiAdmin, uiUsers } from '../data/users';
+import { apiAdmin, sessionUser } from '../data/users';
+import { CartPage } from '../pages/cart-page';
+import { CheckoutPage } from '../pages/checkout-page';
 import { InventoryPage } from '../pages/inventory-page';
 import { LoginPage } from '../pages/login-page';
 
@@ -12,8 +14,10 @@ import { LoginPage } from '../pages/login-page';
 type Fixtures = {
   loginPage: LoginPage;
   inventoryPage: InventoryPage;
-  /** An InventoryPage already logged in as the standard user. */
+  /** An InventoryPage already logged in as sessionUser (standard_user unless UI_USER is set). */
   loggedInPage: InventoryPage;
+  cartPage: CartPage;
+  checkoutPage: CheckoutPage;
   bookingClient: BookingClient;
   authToken: string;
 };
@@ -29,8 +33,16 @@ export const test = base.extend<Fixtures>({
 
   loggedInPage: async ({ page, loginPage }, use) => {
     await loginPage.goto();
-    await loginPage.login(uiUsers.standard.username, uiUsers.standard.password);
+    await loginPage.login(sessionUser.username, sessionUser.password);
     await use(new InventoryPage(page));
+  },
+
+  cartPage: async ({ page }, use) => {
+    await use(new CartPage(page));
+  },
+
+  checkoutPage: async ({ page }, use) => {
+    await use(new CheckoutPage(page));
   },
 
   bookingClient: async ({ request }, use) => {
