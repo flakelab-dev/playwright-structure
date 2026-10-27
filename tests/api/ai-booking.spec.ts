@@ -50,8 +50,10 @@ test.describe('Booking API: validation', () => {
 
     const response = await bookingClient.createBookingRaw(incomplete);
 
-    // Restful Booker answers 500 here rather than 400; the test checks rejection, not the code.
-    expect(response.ok(), `expected rejection, got ${response.status()}`).toBe(false);
-    expect(response.status()).toBeGreaterThanOrEqual(400);
+    test.info().annotations.push({
+      type: 'known bug',
+      description: 'Returns 500 instead of 400 for missing fields',
+    });
+    expect(response.status()).toBe(500);
   });
 });
